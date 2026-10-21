@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant M as main.ts
+    participant U as CreateOrderUseCase
+    participant O as Order
+    participant R as InMemoryOrderRepository
+    participant C as Console
+    M->>R: new InMemoryOrderRepository()
+    M->>U: new CreateOrderUseCase(repository)
+    Note over U,R: Dependência via interface OrderRepository
+    M->>U: await execute(customerId: 123, items)
+    U->>O: new Order(customerId, items)
+    O->>O: validate()
+    alt Itens inválidos — exemplo atual com quantity: 0
+        O-->>U: throw Error("Quantity must be greater than zero")
+        U-->>M: Promise rejeitada
+        M->>C: main().catch(console.error)
+        Note over M,R: Não salva nem imprime status e total
+    else Itens válidos
+        Note over O: Pelo menos 1 item, quantidade inteira > 0<br/>e preço finito >= 0
+        O-->>U: order com status CREATED
+        U->>R: await save(order)
+        R->>R: orders.push(order)
+        R-->>U: Promise resolvida
+        U-->>M: order
+        M->>C: log("Status:", order.status)
+        M->>O: getTotal()
+        O-->>M: soma de quantity × unitPrice
+        M->>C: log("Total:", total)
+    end
