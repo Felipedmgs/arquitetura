@@ -1,5 +1,8 @@
 import { Order } from "../../domain/entities/Order";
+import { StockGateway } from "../gateways/StockGateway";
 import { OrderRepository } from "../repositories/OrderRepository";
+import { DomainError } from "../../domain/errors/DomainError";
+
 
 type CreateOrderInput = {
   customerId: number;
@@ -12,7 +15,8 @@ type CreateOrderInput = {
 
 export class CreateOrderUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository
+   private readonly repository: OrderRepository,
+   private readonly stockGateway: StockGateway
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
@@ -21,7 +25,20 @@ export class CreateOrderUseCase {
       input.items
     );
 
-    await this.orderRepository.save(order);
+
+    for (const item of input.items) {
+      const available = await this.stockGateway.hasStock(
+        item.productId,
+        item.quantity
+      );
+
+    if (!available) {
+        throw new DomainError("Insufficient stock");
+      }
+    }
+
+
+    await this.repository.save(order);
 
     return order;
   }

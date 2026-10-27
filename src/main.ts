@@ -3,6 +3,7 @@ import express from "express";
 import { InMemoryOrderRepository } from "./infra/repositories/InMemoryOrderRepository";
 import { CreateOrderUseCase } from "./application/useCases/CreateOrderUseCase";
 import { OrderController } from "./interfaces/http/controllers/OrderController";
+import { InMemoryStockGateway } from "./infra/gateways/InMemoryStockGateway";
 
 const app = express();
 
@@ -11,12 +12,23 @@ app.use(express.json());
 
 // 1. Criando o repositório
 const repository = new InMemoryOrderRepository();
+const stockGateway = new InMemoryStockGateway();
 
-// 2. Criando o Use Case
-const createOrderUseCase = new CreateOrderUseCase(repository);
+const createOrderUseCase = new CreateOrderUseCase(
+  repository,
+  stockGateway
+);
 
 // 3. Criando o Controller
 const orderController = new OrderController(createOrderUseCase);
+
+const useCase = new CreateOrderUseCase(
+  repository,
+  stockGateway
+);
+
+
+
 
 // 4. Configurando a rota
 app.post("/orders", (req, res) => {
